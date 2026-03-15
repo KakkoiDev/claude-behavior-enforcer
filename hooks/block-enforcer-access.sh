@@ -1,7 +1,7 @@
 #!/bin/bash
-# PreToolUse hook: block access to enforcer holdout directories
+# PreToolUse hook: block access to ~/.claude-behavior-enforcer/
 # Prevents Claude from reading test specs, assertions, fixtures, or results.
-# ALLOWS access to: skill/ (Claude needs to read SKILL.md to use the skill)
+# The skill is discovered via symlink at ~/.claude/skills/ (separate path, not affected).
 
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
@@ -11,9 +11,8 @@ if echo "$PWD" | grep -q '\.claude-behavior-enforcer'; then
   exit 0
 fi
 
-# Holdout paths that must be hidden from Claude
-# skill/ is NOT blocked - Claude needs it to operate the enforcer
-HOLDOUT_PATTERN='\.claude-behavior-enforcer/(requirements|fixtures|grader|enforcer|hooks|results|config\.yaml|bin)'
+# Block any access to the enforcer directory
+HOLDOUT_PATTERN='\.claude-behavior-enforcer'
 
 check_path() {
   if echo "$1" | grep -qE "$HOLDOUT_PATTERN"; then
