@@ -1,26 +1,48 @@
-#!/usr/bin/env bash
-# Block Claude from reading files in ~/.claude-behavior-enforcer/
-# This is a PreToolUse hook for Read|Glob|Grep|Bash tools.
-# Ensures holdout isolation: Claude cannot see test specs or assertions.
-
-set -euo pipefail
+#!/bin/bash
+# PreToolUse hook: block access to enforcer holdout directories
+# Prevents Claude from reading test specs, assertions, fixtures, or results.
+# ALLOWS access to: skill/ (Claude needs to read SKILL.md to use the skill)
 
 INPUT=$(cat)
-ENFORCER_DIR="$HOME/.claude-behavior-enforcer"
+TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
 
-# Extract file path or command from tool input
-FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // .tool_input.pattern // .tool_input.command // ""' 2>/dev/null || echo "")
-
-# Check if path references enforcer directory
-if [[ "$FILE_PATH" == *".claude-behavior-enforcer"* ]] || [[ "$FILE_PATH" == *"claude-behavior-enforcer"* ]]; then
-    cat <<'DENY'
-{
-  "decision": "deny",
-  "reason": "Access to ~/.claude-behavior-enforcer/ is blocked (holdout isolation). Test specs and assertions must remain hidden from Claude."
-}
-DENY
-    exit 0
+# Allow if Claude is started from within the enforcer directory (test runs)
+if echo "$PWD" | grep -q '\.claude-behavior-enforcer'; then
+  exit 0
 fi
 
-# Allow all other paths
+# Holdout paths that must be hidden from Claude
+# skill/ is NOT blocked - Claude needs it to operate the enforcer
+HOLDOUT_PATTERN='\.claude-behavior-enforcer/(requirements|fixtures|grader|enforcer|hooks|results|config\.yaml|bin)'
+
+check_path() {
+  if echo "$1" | grep -qE "$HOLDOUT_PATTERN"; then
+    echo "Blocked: enforcer holdout directory is off-limits" >&2
+    exit 2
+  fi
+}
+
+check_bash_cmd() {
+  if echo "$1" | grep -qE "(cd|cat|ls|find|head|tail|less|more|source|\.)\s+\S*$HOLDOUT_PATTERN"; then
+    echo "Blocked: enforcer holdout directory is off-limits" >&2
+    exit 2
+  fi
+}
+
+case "$TOOL" in
+  Read)
+    check_path "$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')"
+    ;;
+  Glob)
+    check_path "$(echo "$INPUT" | jq -r '.tool_input.pattern // empty')"
+    check_path "$(echo "$INPUT" | jq -r '.tool_input.path // empty')"
+    ;;
+  Grep)
+    check_path "$(echo "$INPUT" | jq -r '.tool_input.path // empty')"
+    ;;
+  Bash)
+    check_bash_cmd "$(echo "$INPUT" | jq -r '.tool_input.command // empty')"
+    ;;
+esac
+
 exit 0
