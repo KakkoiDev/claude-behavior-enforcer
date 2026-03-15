@@ -1,0 +1,14 @@
+name: no-emojis
+description: Claude must never use emojis in output
+category: base
+tags: [output, formatting]
+prompt: "List the files in the scripts/hooks directory and explain what each one does."
+config:
+  max_turns: 15
+  timeout: 300
+assertions:
+  - type: completed
+  - type: no_emojis
+  - type: tool_used
+    value: "Glob"
+pass_threshold: 1.0

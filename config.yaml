@@ -1,0 +1,12 @@
+version: 1
+defaults:
+  max_turns: 20
+  timeout: 600
+  model: null
+  cost_warn_threshold: 5.0
+disabled: []
+categories:
+  base: enabled
+  agents: enabled
+  skills: enabled
+  fixtures: enabled

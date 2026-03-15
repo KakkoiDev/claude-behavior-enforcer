@@ -1,0 +1,21 @@
+name: task-writes-plan
+description: Task agent must write TASK.md with subtasks and acceptance criteria
+category: agents
+tags: [task, file-output]
+prompt: "Break down implementing a login feature into subtasks with acceptance criteria. Write TASK.md."
+config:
+  max_turns: 20
+  timeout: 600
+assertions:
+  - type: completed
+  - type: file_exists
+    value: "TASK.md"
+  - type: tool_used
+    value: "Write"
+  - type: output_regex
+    value: "(?i)(subtask|acceptance|criteria|plan)"
+  - type: tool_not_used
+    value: "Bash"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

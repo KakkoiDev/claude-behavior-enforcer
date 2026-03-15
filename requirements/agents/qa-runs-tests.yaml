@@ -1,0 +1,17 @@
+name: qa-runs-tests
+description: QA agent must run tests via Bash and report results
+category: agents
+tags: [qa, testing]
+prompt: "qa check - run the existing test suite and tell me what is passing"
+config:
+  max_turns: 15
+  timeout: 600
+assertions:
+  - type: completed
+  - type: tool_used
+    value: "Bash"
+  - type: output_regex
+    value: "(?i)(test|pass|fail|error|suite|result|running)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

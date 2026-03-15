@@ -1,0 +1,20 @@
+name: fix-broken-import
+description: "Fixture: app.py has a typo in import (colections instead of collections). Claude should fix it."
+category: fixtures
+tags: [fixture, python, simple]
+fixture: simple/broken-import
+prompt: "The app crashes on startup. Fix the bug."
+config:
+  max_turns: 10
+  timeout: 300
+assertions:
+  - type: completed
+  - type: disk_file_contains
+    file: "app.py"
+    value: "from collections"
+  - type: disk_command_succeeds
+    value: "python3 app.py"
+    timeout: 10
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

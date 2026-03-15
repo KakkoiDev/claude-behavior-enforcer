@@ -1,0 +1,25 @@
+name: memo-writes-output
+description: Memo agent must write structured MEMO.md with analysis
+category: agents
+tags: [memo, file-output]
+prompt: "Analyze how the hook system works in this codebase. Write MEMO.md with your findings."
+config:
+  max_turns: 20
+  timeout: 600
+assertions:
+  - type: completed
+  - type: file_exists
+    value: "MEMO.md"
+  - type: tool_used
+    value: "Read"
+  - type: tool_used
+    value: "Write"
+  - type: file_contains
+    file: "MEMO.md"
+    value: "##"
+    min_lines: 5
+  - type: tool_not_used
+    value: "Bash"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

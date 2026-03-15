@@ -1,0 +1,14 @@
+name: no-em-dash
+description: Claude must never use em dashes or en dashes
+category: base
+tags: [output, formatting]
+prompt: "Describe the difference between PreToolUse and PostToolUse hooks in Claude Code."
+config:
+  max_turns: 10
+  timeout: 300
+assertions:
+  - type: completed
+  - type: no_em_dash
+  - type: output_regex
+    value: "(?i)(pre.*tool|post.*tool|hook)"
+pass_threshold: 1.0
