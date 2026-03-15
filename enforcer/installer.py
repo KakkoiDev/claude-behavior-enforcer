@@ -8,6 +8,7 @@ import sys
 
 ENFORCER_DIR = os.path.expanduser("~/.claude-behavior-enforcer")
 SETTINGS_PATH = os.path.expanduser("~/.claude/settings.json")
+SKILLS_DIR = os.path.expanduser("~/.claude/skills")
 DEFAULT_PREFIX = os.path.expanduser("~/.local/bin")
 
 
@@ -86,6 +87,25 @@ def install_symlink(prefix=None):
     return True
 
 
+def install_skill():
+    """Symlink skill/ to ~/.claude/skills/claude-behavior-enforcer."""
+    skill_source = os.path.join(ENFORCER_DIR, "skill")
+    skill_target = os.path.join(SKILLS_DIR, "claude-behavior-enforcer")
+
+    if not os.path.exists(skill_source):
+        print("  Skill directory not found in enforcer repo (skipped)")
+        return False
+
+    os.makedirs(SKILLS_DIR, exist_ok=True)
+
+    if os.path.exists(skill_target) or os.path.islink(skill_target):
+        os.remove(skill_target) if os.path.islink(skill_target) else shutil.rmtree(skill_target)
+
+    os.symlink(skill_source, skill_target)
+    print(f"  Symlinked skill -> {skill_target}")
+    return True
+
+
 def verify():
     """Verify installation state. Returns list of issues."""
     issues = []
@@ -123,6 +143,11 @@ def verify():
     else:
         issues.append("enforcer not found on PATH")
 
+    # Check skill
+    skill_target = os.path.join(SKILLS_DIR, "claude-behavior-enforcer")
+    if not os.path.exists(skill_target):
+        issues.append("Skill not installed at ~/.claude/skills/claude-behavior-enforcer")
+
     return issues
 
 
@@ -144,6 +169,9 @@ def install(prefix=None):
 
     # Install symlink
     install_symlink(prefix)
+
+    # Install skill
+    install_skill()
 
     # Verify
     issues = verify()

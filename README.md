@@ -10,11 +10,26 @@ Test and enforce Claude Code behavioral requirements with holdout isolation.
 - Ensures Claude cannot read test specs (holdout isolation via hooks)
 - Tracks compliance over time with regression detection
 
+## Installation
+
+```bash
+# Clone to ~/.claude-behavior-enforcer
+git clone https://github.com/YOUR_USER/claude-behavior-enforcer.git ~/.claude-behavior-enforcer
+
+# Install: hooks, CLI symlink, skill
+~/.claude-behavior-enforcer/bin/enforcer install
+```
+
+This does three things:
+1. Adds holdout hook to `~/.claude/settings.json` (blocks Claude from reading specs)
+2. Symlinks `enforcer` to `~/.local/bin/` (or `--prefix /your/path`)
+3. Symlinks skill to `~/.claude/skills/claude-behavior-enforcer`
+
 ## Quick Start
 
 ```bash
-# Install (one-time)
-~/.claude-behavior-enforcer/bin/enforcer install
+# After install, just use:
+enforcer run
 
 # Run all specs
 enforcer run
