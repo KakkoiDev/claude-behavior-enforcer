@@ -2,7 +2,7 @@ name: task-writes-plan
 description: Task agent must write TASK.md with subtasks and acceptance criteria
 category: agents
 tags: [task, file-output]
-prompt: "Break down implementing a login feature into subtasks with acceptance criteria. Write TASK.md."
+prompt: "Read CLAUDE.md in this directory. Break down implementing the rules it defines into subtasks with acceptance criteria. Write TASK.md."
 config:
   max_turns: 20
   timeout: 600

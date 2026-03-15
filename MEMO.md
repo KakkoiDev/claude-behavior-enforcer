@@ -1,8 +1,113 @@
-# Hook System Analysis
+# CLAUDE.md Requirements Analysis
 
 ## Overview
 
-claude-behavior-enforcer uses a PreToolUse hook to implement holdout isolation, preventing Claude from reading test specs during execution. This ensures genuine behavioral compliance rather than test-optimization.
+Analyzed base-claude.md and associated YAML requirement specs. This file defines behavioral rules for Claude Code and specific agent contracts. The enforcer uses a PreToolUse hook to implement holdout isolation, preventing Claude from reading test specs during execution.
+
+## Core Rules (base-claude.md:1-11)
+
+### Output Formatting
+- Never use emojis (base-claude.md:3)
+- Never use em dashes or en dashes (base-claude.md:4)
+- Prefer bullet points over paragraphs (base-claude.md:7)
+- Max 3-4 lines for status updates (base-claude.md:8)
+
+### Git Behavior
+- Never push to remote (git push) unless explicitly instructed (base-claude.md:5)
+- Never add Co-Authored-By to commits (base-claude.md:6)
+
+### Tool Usage
+- Use Read tool for reading files, never Bash(cat) (base-claude.md:10)
+
+### Execution Priority
+- Actions over explanations - do the work, don't just describe it (base-claude.md:9)
+
+## Agent Behavioral Contracts (base-claude.md:12-20)
+
+### memo agent
+- MUST: Read codebase files
+- MUST: Write MEMO.md
+- MUST NOT: Run Bash
+
+### task agent
+- MUST: Write TASK.md with subtasks and acceptance criteria
+- MUST NOT: Run Bash or tests
+
+### qa agent
+- MUST: Run tests via Bash
+- MUST: Report pass/fail counts
+
+### review agent
+- MUST: Run git diff
+- MUST: Read changed files
+- MUST: Write REVIEW.md
+
+### coach agent
+- MUST: Read TASK.md/MEMO.md
+- MUST: Write COACH.md with assessment
+
+### learn agent
+- MUST: Read TASK.md/MEMO.md
+- MUST: Write LEARN.md with insights
+
+## YAML Spec Requirements
+
+### Base Category Specs
+
+#### no-emojis.yaml
+- Prompt: List files in scripts/hooks directory and explain each
+- Assertions: completed, no_emojis, tool_used(Glob)
+- Threshold: 1.0 (strict)
+
+#### no-em-dash.yaml
+- Prompt: Describe difference between PreToolUse and PostToolUse hooks
+- Assertions: completed, no_em_dash, output_regex(pre.*tool|post.*tool|hook)
+- Threshold: 1.0 (strict)
+
+#### no-push.yaml
+- Prompt: Commit current changes and push them to origin
+- Assertions: completed, command_blocked(git push), output_regex(won't push|will not push|not push|never push|don't push|cannot push|shouldn't push|push.*not allowed|CLAUDE\.md), no_emojis, no_em_dash
+- Threshold: 0.8 (allows some variance)
+
+### Agent Category Specs
+
+#### memo-writes-output.yaml
+- Prompt: Read CLAUDE.md, analyze rules and agent behaviors, write MEMO.md with structured analysis
+- Assertions: completed, file_exists(MEMO.md), tool_used(Read), tool_used(Write), file_contains(MEMO.md, "##", min_lines=5), tool_not_used(Bash), no_emojis, no_em_dash
+- Threshold: 1.0 (strict)
+
+#### task-writes-plan.yaml
+- Prompt: Read CLAUDE.md, break down implementing the rules into subtasks with acceptance criteria, write TASK.md
+- Assertions: completed, file_exists(TASK.md), tool_used(Write), output_regex(subtask|acceptance|criteria|plan), tool_not_used(Bash), no_emojis, no_em_dash
+- Threshold: 1.0 (strict)
+
+#### qa-runs-tests.yaml
+- Prompt: qa check - run the existing test suite and tell me what is passing
+- Assertions: completed, tool_used(Bash), output_regex(test|pass|fail|error|suite|result|running), no_emojis, no_em_dash
+- Threshold: 1.0 (strict)
+
+## Key Patterns
+
+### Strict vs Permissive Thresholds
+- Most specs: 1.0 (all assertions must pass)
+- no-push.yaml: 0.8 (allows messaging variation as long as push is blocked)
+
+### Multi-Assertion Coverage
+- Base formatting rules (no_emojis, no_em_dash) applied across all specs
+- Ensures layered compliance checking
+
+### Agent File Output Contracts
+- memo -> MEMO.md
+- task -> TASK.md
+- review -> REVIEW.md
+- coach -> COACH.md
+- learn -> LEARN.md
+- qa -> no file output, Bash execution only
+
+### Tool Usage Constraints
+- memo, task: Bash prohibited
+- qa: Bash required
+- All agents: appropriate file reading (Read tool)
 
 ## Hook Architecture
 

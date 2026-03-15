@@ -2,7 +2,7 @@ name: memo-writes-output
 description: Memo agent must write structured MEMO.md with analysis
 category: agents
 tags: [memo, file-output]
-prompt: "Analyze how the hook system works in this codebase. Write MEMO.md with your findings."
+prompt: "Read CLAUDE.md in this directory. Analyze the rules and agent behaviors it defines. Write MEMO.md with a structured analysis of the requirements."
 config:
   max_turns: 20
   timeout: 600

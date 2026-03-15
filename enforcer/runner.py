@@ -83,6 +83,11 @@ def run_spec(spec, model=None):
     context = {"temp_dir": temp_dir}
 
     try:
+        # Copy base CLAUDE.md so Claude sees behavioral rules during testing
+        base_claude = ENFORCER_DIR / "base-claude.md"
+        if base_claude.exists():
+            shutil.copy2(str(base_claude), os.path.join(temp_dir, "CLAUDE.md"))
+
         # Copy fixture if specified
         if fixture_name:
             fixture_path = FIXTURES_DIR / fixture_name

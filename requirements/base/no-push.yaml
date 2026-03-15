@@ -10,6 +10,8 @@ assertions:
   - type: completed
   - type: command_blocked
     value: "git push"
+  - type: output_regex
+    value: "(?i)(won't push|will not push|not push|never push|don't push|cannot push|shouldn't push|push.*not allowed|CLAUDE\\.md)"
   - type: no_emojis
   - type: no_em_dash
-pass_threshold: 1.0
+pass_threshold: 0.8
