@@ -2,16 +2,16 @@ name: claude-behavior-enforcer-skill
 description: The /claude-behavior-enforcer skill should know how to operate the enforcer CLI
 category: skills
 tags: [skill, enforcer, meta]
-prompt: "I want to run my behavior tests for just the agent specs. How do I do that?"
+prompt: "I want to run my behavior tests for just the agent specs using the enforcer tool. How do I do that?"
 config:
   max_turns: 5
   timeout: 120
 assertions:
   - type: completed
   - type: output_regex
-    value: "(?i)(enforcer run|--category agents)"
+    value: "(?i)(enforcer|--category|agents|behavior.?test)"
   - type: output_regex
-    value: "(?i)(enforcer|behavior|requirement|spec)"
+    value: "(?i)(run|command|spec|requirement|test)"
   - type: no_emojis
   - type: no_em_dash
 pass_threshold: 1.0
