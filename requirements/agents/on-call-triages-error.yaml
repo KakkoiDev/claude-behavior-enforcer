@@ -1,0 +1,22 @@
+name: on-call-triages-error
+description: On-call agent must classify errors and suggest root cause fix
+category: agents
+tags: [on-call, triage]
+prompt: |
+  Analyze this production error:
+  TypeError: Cannot read properties of undefined (reading 'userId')
+      at validateRequest (/app/middleware/auth.js:34:22)
+      at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+  Exit code 1. Service returned 500 to 47 users in the last 5 minutes.
+config:
+  max_turns: 10
+  timeout: 300
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(undefined|null|missing|auth|userId)"
+  - type: output_regex
+    value: "(?i)(fix|root cause|classification|bug|check|validate|guard)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

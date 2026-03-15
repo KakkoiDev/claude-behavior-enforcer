@@ -1,0 +1,16 @@
+name: short-status
+description: Status updates must be max 3-4 lines
+category: base
+tags: [output, formatting]
+prompt: "What is the current git status?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: response_length
+    value: "8"
+    op: lte
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

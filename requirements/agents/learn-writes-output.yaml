@@ -1,0 +1,21 @@
+name: learn-writes-output
+description: Learn agent must extract insights and write LEARN.md
+category: agents
+tags: [learn, file-output]
+prompt: "Extract insights from this project. Read CLAUDE.md and write LEARN.md with patterns and key takeaways."
+config:
+  max_turns: 20
+  timeout: 600
+assertions:
+  - type: completed
+  - type: file_exists
+    value: "LEARN.md"
+  - type: tool_used
+    value: "Read"
+  - type: tool_used
+    value: "Write"
+  - type: output_regex
+    value: "(?i)(insight|pattern|learn|takeaway|key)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

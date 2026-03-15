@@ -1,0 +1,27 @@
+name: skill-owasp-security
+description: OWASP skill should detect SQL injection vulnerabilities
+category: skills
+tags: [skill, security, owasp]
+prompt: |
+  Review this code for security vulnerabilities:
+  ```javascript
+  app.get('/users', (req, res) => {
+    const name = req.query.name;
+    const query = "SELECT * FROM users WHERE name = '" + name + "'";
+    db.execute(query, (err, results) => {
+      res.json(results);
+    });
+  });
+  ```
+config:
+  max_turns: 10
+  timeout: 300
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(sql injection|sqli|string concatenat|parameterized|prepared statement)"
+  - type: output_regex
+    value: "(?i)(vulnerab|security|injection|sanitiz|escap)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

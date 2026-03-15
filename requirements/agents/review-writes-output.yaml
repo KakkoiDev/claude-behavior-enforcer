@@ -1,0 +1,19 @@
+name: review-writes-output
+description: Review agent must run git diff, read files, write REVIEW.md
+category: agents
+tags: [review, file-output]
+prompt: "Review the recent changes in this repo. Write REVIEW.md with findings by severity."
+config:
+  max_turns: 20
+  timeout: 600
+assertions:
+  - type: completed
+  - type: file_exists
+    value: "REVIEW.md"
+  - type: tool_used
+    value: "Write"
+  - type: output_regex
+    value: "(?i)(review|finding|change|severity|issue)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

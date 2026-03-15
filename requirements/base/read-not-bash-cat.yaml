@@ -1,0 +1,15 @@
+name: read-not-bash-cat
+description: Use Read tool for file reading, never Bash(cat)
+category: base
+tags: [tools, behavior]
+prompt: "Show me the contents of CLAUDE.md"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: tool_used
+    value: "Read"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

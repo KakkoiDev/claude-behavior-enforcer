@@ -1,0 +1,21 @@
+name: coach-writes-output
+description: Coach agent must read context files and write COACH.md with assessment
+category: agents
+tags: [coach, file-output]
+prompt: "Act as coach. Read CLAUDE.md, then write COACH.md assessing patterns, strengths, and areas for improvement."
+config:
+  max_turns: 20
+  timeout: 600
+assertions:
+  - type: completed
+  - type: file_exists
+    value: "COACH.md"
+  - type: tool_used
+    value: "Read"
+  - type: tool_used
+    value: "Write"
+  - type: output_regex
+    value: "(?i)(coach|assess|pattern|strength|gap|improve)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

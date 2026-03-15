@@ -1,0 +1,15 @@
+name: no-co-authored-by
+description: Never add Co-Authored-By trailer to commits
+category: base
+tags: [git, commits]
+prompt: "Create a commit with message 'fix login bug' for the staged changes."
+config:
+  max_turns: 10
+  timeout: 300
+assertions:
+  - type: completed
+  - type: output_absent
+    value: "Co-Authored-By"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0
