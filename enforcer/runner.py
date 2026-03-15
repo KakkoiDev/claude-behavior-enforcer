@@ -121,14 +121,18 @@ def run_spec(spec, model=None):
 
         # Execute - result file outside temp dir so Claude doesn't see it
         result_file = f"/tmp/enforcer-result-{os.getpid()}-{id(spec)}.json"
+        err_file = result_file + ".err"
         try:
-            with open(result_file, "w") as out:
-                subprocess.run(
-                    claude_args, stdout=out, stderr=subprocess.DEVNULL,
+            with open(result_file, "w") as out, open(err_file, "w") as err:
+                proc = subprocess.run(
+                    claude_args, stdout=out, stderr=err,
                     timeout=timeout
                 )
         except subprocess.TimeoutExpired:
             pass
+        except Exception as e:
+            with open(err_file, "a") as err:
+                err.write(f"\nRunner exception: {e}\n")
 
         # Parse and grade
         result = parse_result(result_file)

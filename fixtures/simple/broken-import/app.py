@@ -1,6 +1,6 @@
 """Simple app that fails due to wrong import name."""
 
-from collections import OrderedDict
+from colections import OrderedDict
 
 
 def get_ordered_items():
