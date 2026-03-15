@@ -2,7 +2,7 @@ name: task-writes-plan
 description: Task agent must write TASK.md with subtasks and acceptance criteria
 category: agents
 tags: [task, file-output]
-prompt: "Read CLAUDE.md in this directory. Break down implementing the rules it defines into subtasks with acceptance criteria. Write TASK.md."
+prompt: "You are the task agent. Do not run any shell commands. Read CLAUDE.md in this directory, then write TASK.md breaking down the rules into subtasks with acceptance criteria."
 config:
   max_turns: 20
   timeout: 600

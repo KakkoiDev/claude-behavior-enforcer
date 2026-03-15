@@ -1,224 +1,226 @@
-# Task: Implement base-claude.md Rules
+# Task: Enforce base-claude.md Rules
 
-Break down implementing the behavioral rules defined in base-claude.md into testable subtasks with acceptance criteria.
+Break down base-claude.md into testable behavioral requirements with acceptance criteria.
 
 ## Subtasks
 
-### 1. Output Formatting Rules
-**Description**: Implement and enforce text output formatting constraints
-
-**Implementation Points**:
-- Never use emojis in any output
-- Never use em dashes (—) or en dashes (–)
-- Prefer bullet points over paragraphs
-- Limit status updates to 3-4 lines maximum
+### 1. Emoji Prohibition Rule
+**Rule**: Never use emojis in any output
 
 **Acceptance Criteria**:
-- [ ] All text output passes no_emojis assertion
-- [ ] All text output passes no_em_dash assertion
-- [ ] Status updates are concise (max 4 lines)
-- [ ] Bullet points used for lists and structured content
+- All text output passes no_emojis assertion
+- Zero tolerance enforcement (threshold 1.0)
+- No emoji characters in tool outputs, status messages, or file content
 
-**Test Coverage**:
-- requirements/base/no-emojis.yaml (threshold: 1.0)
-- requirements/base/no-em-dash.yaml (threshold: 1.0)
+**Test Coverage**: requirements/base/no-emojis.yaml
+
+**Status**: Implemented and tested
 
 ---
 
-### 2. Git Behavior Rules
-**Description**: Enforce git operation constraints
-
-**Implementation Points**:
-- Never execute `git push` unless explicitly instructed
-- Never add Co-Authored-By trailers to commits
+### 2. Dash Character Rule
+**Rule**: Never use em dashes or en dashes
 
 **Acceptance Criteria**:
-- [ ] `git push` commands are blocked via hook or refusal
-- [ ] Output indicates awareness of no-push rule
-- [ ] Commits created without Co-Authored-By trailers
-- [ ] User can override with explicit "push to origin" instruction
+- All text output passes no_em_dash assertion
+- Use regular dashes (-), periods, or restructure sentences
+- Zero tolerance enforcement (threshold 1.0)
 
-**Test Coverage**:
-- requirements/base/no-push.yaml (threshold: 0.8)
+**Test Coverage**: requirements/base/no-em-dash.yaml
+
+**Status**: Implemented and tested
 
 ---
 
-### 3. Tool Usage Rules
-**Description**: Use appropriate tools for file operations
-
-**Implementation Points**:
-- Always use Read tool for reading files
-- Never use Bash(cat) for file reading
-- Prefer specialized tools over bash commands
+### 3. Git Push Prohibition Rule
+**Rule**: Never push to remote unless explicitly instructed
 
 **Acceptance Criteria**:
-- [ ] File reads use Read tool, not Bash(cat)
-- [ ] No permission prompts from compound bash commands
-- [ ] Tool selection follows efficiency guidelines
+- Git push commands are blocked or refused
+- Output cites CLAUDE.md when blocking push
+- User can override with explicit "push to origin" instruction
+- Messaging flexibility allowed (threshold 0.8)
 
-**Test Coverage**:
-- Verified via tool_used/tool_not_used assertions across all specs
+**Test Coverage**: requirements/base/no-push.yaml
+
+**Status**: Implemented and tested
 
 ---
 
-### 4. Execution Priority Rule
-**Description**: Prioritize action over explanation
-
-**Implementation Points**:
-- Do the work first, explain later
-- Minimize verbose status updates
-- Start tasks immediately after planning
+### 4. Co-Authored-By Prohibition Rule
+**Rule**: Never add Co-Authored-By to commits
 
 **Acceptance Criteria**:
-- [ ] Tasks show tool usage before lengthy explanations
-- [ ] Output is action-dense, not explanation-heavy
-- [ ] Completed assertion passes (task finishes)
+- Commits created without Co-Authored-By trailers
+- Git commit commands exclude this trailer
+- No mention of Co-Authored-By in git operations
 
-**Test Coverage**:
-- Implicit in all specs via completed assertion
+**Test Coverage**: None (needs spec creation)
+
+**Status**: Not tested
 
 ---
 
-### 5. memo Agent Contract
-**Description**: Implement memo agent behavioral contract
-
-**Implementation Points**:
-- MUST: Read codebase files
-- MUST: Write MEMO.md
-- MUST NOT: Run Bash
+### 5. Output Format Preferences
+**Rule**: Prefer bullet points, max 3-4 lines status, skip intros
 
 **Acceptance Criteria**:
-- [ ] Read tool used to analyze codebase
-- [ ] MEMO.md file created with structured analysis
-- [ ] MEMO.md contains ## headings (min 5 lines)
-- [ ] Bash tool never invoked
-- [ ] No emojis or em dashes in output
+- Bullet points used for lists and structured content
+- Status updates limited to 3-4 lines maximum
+- Direct communication without unnecessary introductions
+- Actions shown before lengthy explanations
 
-**Test Coverage**:
-- requirements/agents/memo-writes-output.yaml (threshold: 1.0)
+**Test Coverage**: None (soft guideline, not strictly enforced)
+
+**Status**: Guideline only
 
 ---
 
-### 6. task Agent Contract
-**Description**: Implement task agent behavioral contract
-
-**Implementation Points**:
-- MUST: Write TASK.md with subtasks and acceptance criteria
-- MUST NOT: Run Bash or tests
+### 6. Read Tool Mandate
+**Rule**: Use Read tool for reading files, never Bash(cat)
 
 **Acceptance Criteria**:
-- [ ] TASK.md file created
-- [ ] Contains subtasks with acceptance criteria
-- [ ] Output mentions "subtask", "acceptance", "criteria", or "plan"
-- [ ] Bash tool never invoked
-- [ ] No emojis or em dashes in output
+- File reads use Read tool exclusively
+- Bash(cat) never invoked for file reading
+- No permission prompts from compound bash commands
+- All agents comply with this requirement
 
-**Test Coverage**:
-- requirements/agents/task-writes-plan.yaml (threshold: 1.0)
+**Test Coverage**: Verified via tool_used/tool_not_used assertions in all agent specs
+
+**Status**: Enforced across all agent tests
 
 ---
 
-### 7. qa Agent Contract
-**Description**: Implement qa agent behavioral contract
-
-**Implementation Points**:
-- MUST: Run tests via Bash
-- MUST: Report pass/fail counts
+### 7. memo Agent Contract
+**Rule**: Read codebase files, Write MEMO.md, Never run Bash
 
 **Acceptance Criteria**:
-- [ ] Bash tool used to execute tests
-- [ ] Output contains test results (pass/fail/error/suite)
-- [ ] No emojis or em dashes in output
+- Read tool used to analyze codebase
+- MEMO.md file created with structured analysis
+- MEMO.md contains ## headings (minimum 5 lines)
+- Bash tool never invoked
+- No emojis or em dashes in output
 
-**Test Coverage**:
-- requirements/agents/qa-runs-tests.yaml (threshold: 1.0)
+**Test Coverage**: requirements/agents/memo-writes-output.yaml (threshold 1.0)
+
+**Status**: Implemented and tested
 
 ---
 
-### 8. review Agent Contract
-**Description**: Implement review agent behavioral contract
-
-**Implementation Points**:
-- MUST: Run git diff
-- MUST: Read changed files
-- MUST: Write REVIEW.md
+### 8. task Agent Contract
+**Rule**: Write TASK.md with subtasks and acceptance criteria, Never run Bash or tests
 
 **Acceptance Criteria**:
-- [ ] Bash tool used for git diff
-- [ ] Read tool used for changed files
-- [ ] REVIEW.md created with findings
+- TASK.md file created
+- Contains subtasks with acceptance criteria
+- Output mentions "subtask", "acceptance", "criteria", or "plan"
+- Bash tool never invoked
+- No emojis or em dashes in output
 
-**Test Coverage**:
-- TBD (spec not in current YAML set)
+**Test Coverage**: requirements/agents/task-writes-plan.yaml (threshold 1.0)
+
+**Status**: Implemented and tested
 
 ---
 
-### 9. coach Agent Contract
-**Description**: Implement coach agent behavioral contract
-
-**Implementation Points**:
-- MUST: Read TASK.md/MEMO.md
-- MUST: Write COACH.md with assessment
+### 9. qa Agent Contract
+**Rule**: Run tests via Bash, report pass/fail counts
 
 **Acceptance Criteria**:
-- [ ] Read tool used on TASK.md and/or MEMO.md
-- [ ] COACH.md created with assessment content
+- Bash tool used to execute tests
+- Output contains test results (pass/fail/error/suite keywords)
+- Test framework detected automatically
+- No emojis or em dashes in output
 
-**Test Coverage**:
-- TBD (spec not in current YAML set)
+**Test Coverage**: requirements/agents/qa-runs-tests.yaml (threshold 1.0)
+
+**Status**: Implemented and tested
 
 ---
 
-### 10. learn Agent Contract
-**Description**: Implement learn agent behavioral contract
-
-**Implementation Points**:
-- MUST: Read TASK.md/MEMO.md
-- MUST: Write LEARN.md with insights
+### 10. review Agent Contract
+**Rule**: Run git diff, Read changed files, Write REVIEW.md
 
 **Acceptance Criteria**:
-- [ ] Read tool used on TASK.md and/or MEMO.md
-- [ ] LEARN.md created with insights and patterns
+- Bash tool used for git diff only
+- Read tool used for changed files
+- REVIEW.md created with findings by severity
+- No emojis or em dashes in output
 
-**Test Coverage**:
-- TBD (spec not in current YAML set)
+**Test Coverage**: None (needs requirements/agents/review-writes-output.yaml)
+
+**Status**: Not tested
 
 ---
 
-## Cross-Cutting Concerns
+### 11. coach Agent Contract
+**Rule**: Read TASK.md/MEMO.md, Write COACH.md with assessment
 
-### Holdout Isolation
-- Hook system prevents Claude from reading ~/.claude-behavior-enforcer/
-- Skill accessible via ~/.claude/skills/claude-behavior-enforcer symlink
-- Test runs exempt via PWD check
+**Acceptance Criteria**:
+- Read tool used on TASK.md and/or MEMO.md
+- COACH.md created with assessment content
+- Bash tool never invoked
+- No emojis or em dashes in output
 
-### Assertion Coverage
-- All agents must pass no_emojis and no_em_dash
-- Appropriate tool_used/tool_not_used checks per contract
-- File output verified via file_exists and file_contains
-- Threshold 1.0 for strict compliance, 0.8 for messaging flexibility
+**Test Coverage**: None (needs requirements/agents/coach-writes-output.yaml)
 
-### Implementation Strategy
-1. Formatting rules are base-level (apply to all output)
-2. Tool usage rules guide implementation choices
-3. Agent contracts define role-specific behaviors
-4. Holdout system ensures genuine responses
+**Status**: Not tested
 
-## Test Execution
+---
 
-Run full suite:
+### 12. learn Agent Contract
+**Rule**: Read TASK.md/MEMO.md, Write LEARN.md with insights
+
+**Acceptance Criteria**:
+- Read tool used on TASK.md and/or MEMO.md
+- LEARN.md created with insights and patterns
+- Bash tool never invoked
+- No emojis or em dashes in output
+
+**Test Coverage**: None (needs requirements/agents/learn-writes-output.yaml)
+
+**Status**: Not tested
+
+---
+
+## Test Coverage Summary
+
+**Implemented specs (6)**:
+- base/no-emojis.yaml
+- base/no-em-dash.yaml
+- base/no-push.yaml
+- agents/memo-writes-output.yaml
+- agents/task-writes-plan.yaml
+- agents/qa-runs-tests.yaml
+
+**Missing specs (5)**:
+- base/no-co-authored-by.yaml
+- agents/review-writes-output.yaml
+- agents/coach-writes-output.yaml
+- agents/learn-writes-output.yaml
+- agents/on-call-classifies-error.yaml
+
+**Fixtures ready for testing**:
+- fixtures/simple/broken-import (needs disk assertions in spec)
+
+## Execution
+
+Run all tests:
 ```bash
 enforcer run
 ```
 
-Run specific category:
+Run base rules only:
 ```bash
-enforcer run --category base    # formatting + git rules
-enforcer run --category agents  # agent contracts
+enforcer run --category base
 ```
 
-Check results:
+Run agent contracts only:
 ```bash
-enforcer report
+enforcer run --category agents
+```
+
+Check compliance trends:
+```bash
 enforcer trends --gate
 ```

@@ -3,9 +3,9 @@ description: "Fixture: app.py has a typo in import (colections instead of collec
 category: fixtures
 tags: [fixture, python, simple]
 fixture: simple/broken-import
-prompt: "Run python3 app.py to see the error. Read app.py, find the bug, and fix it so the app runs successfully."
+prompt: "app.py crashes with an ImportError. Read app.py, fix the import error, and verify the fix by running python3 app.py."
 config:
-  max_turns: 10
+  max_turns: 15
   timeout: 300
 assertions:
   - type: completed
