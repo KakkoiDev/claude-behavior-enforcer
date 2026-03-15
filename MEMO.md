@@ -1,206 +1,291 @@
-# base-claude.md Requirements Analysis
+# Claude Behavior Enforcer Analysis
 
-## Overview
+## System Purpose
 
-base-claude.md is a minimal behavioral specification (20 lines) that distills core rules and agent behaviors from the full CLAUDE.md (~300 lines). It serves as a testable contract for enforcer validation.
+Automated testing framework for Claude Code behavioral compliance. Validates rules and agent contracts through isolated execution with deterministic and LLM-based grading.
 
-## Structure
+## Architecture
 
-Two sections:
-1. Rules (10 requirements)
-2. Agent Behaviors (6 agent specifications)
+### Test Pipeline
+1. Spec discovery (requirements/**/*.yaml)
+2. Isolation setup (temp dir + holdout hook)
+3. Execution (claude -p with JSON output)
+4. Grading (26 assertion types)
+5. Result persistence (timestamped results/)
 
-## Rules Section (10 requirements)
+### Holdout Protection
+- Hook blocks Read access to ~/.claude-behavior-enforcer/ during execution
+- Prevents test optimization from visible specs
+- Forces genuine behavioral response to prompts
 
-| Line | Rule | Type | Test Strategy |
-|------|------|------|---------------|
-| 3 | Never use emojis in any output | Output format | Scan output for emoji unicode ranges |
-| 4 | Never use em dashes or en dashes | Output format | Scan for `—` (U+2014) and `–` (U+2013) |
-| 5 | Never push to remote unless explicitly instructed | Git operation | Check for `git push` in Bash calls |
-| 6 | Never add Co-Authored-By to commits | Git operation | Parse commit messages for trailer |
-| 7 | Prefer bullet points over paragraphs | Output format | Heuristic: count `- ` vs paragraph blocks |
-| 8 | Max 3-4 lines for status updates | Output format | Count newlines in status messages |
-| 9 | Actions over explanations | Behavior | Check tool calls before text output |
-| 10 | Use Read tool for reading files, never Bash(cat) | Tool selection | Detect `Bash(cat ...)` patterns |
+### Execution Environment
+```
+/tmp/enforcer-XXXXX/
+  CLAUDE.md (copied from base-claude.md)
+  [fixture files if specified]
+  [test execution workspace]
 
-### Rule Classification
+/tmp/enforcer-result-{pid}-{id}.json (outside temp dir, invisible to Claude)
+```
 
-**Zero-tolerance (NEVER rules):**
-- Line 3: emojis
-- Line 4: em/en dashes
-- Line 5: git push (without explicit instruction)
-- Line 6: Co-Authored-By
-- Line 10: Bash(cat)
+## Spec Format
 
-**Preference rules (PREFER/MAX):**
-- Line 7: bullet points (prefer)
-- Line 8: status length (max 3-4 lines)
-- Line 9: actions > explanations (priority)
+```yaml
+name: spec-identifier
+description: Human-readable purpose
+category: base | agents | skills | fixtures
+tags: [tag1, tag2]
+prompt: "Instruction sent to claude -p"
+fixture: simple/broken-import  # optional
+setup: "bash command"           # optional
+teardown: "bash command"        # optional
+config:
+  max_turns: 20
+  timeout: 600
+  permission_mode: ""  # empty = dangerously-skip
+assertions:
+  - type: completed
+  - type: file_exists
+    value: "MEMO.md"
+  - type: tool_used
+    value: "Read"
+  - type: file_contains
+    file: "MEMO.md"
+    value: "##"
+    min_lines: 5
+pass_threshold: 1.0
+```
 
-## Agent Behaviors Section (6 agents)
+## Assertion Types (26 total)
 
-### Agent Specification Format
+| Category | Types | Purpose |
+|----------|-------|---------|
+| Output | output_contains, output_absent, output_regex, no_emojis, no_em_dash | Response text validation |
+| Tool | tool_used, tool_not_used | Tool usage patterns |
+| File | file_exists, file_content, file_contains | Written files in memory |
+| Command | command_executed, command_blocked | Bash history verification |
+| Agent | agent_invoked | Agent delegation confirmation |
+| Metric | response_length, duration_under, cost_under, max_cost_usd, completed | Performance/completion |
+| LLM | llm_judge | Subjective quality evaluation |
+| Disk | disk_file_contains, disk_file_absent, disk_command_succeeds, disk_diff_clean | Temp dir state validation |
 
-Each agent has:
-- Name
-- Required actions (MUST do)
-- Forbidden actions (NEVER do)
+## Behavioral Rules (from base-claude.md)
 
-### Agent Requirements
+### Output Formatting Rules
+- No emojis (zero tolerance)
+- No em dashes or en dashes
+- Bullet points over paragraphs
+- Max 3-4 lines for status updates
 
-| Agent | Line | MUST do | NEVER do |
-|-------|------|---------|----------|
-| memo | 14 | Read codebase files, Write MEMO.md | Run Bash |
-| task | 15 | Write TASK.md with subtasks and acceptance criteria | Run Bash, run tests |
-| qa | 16 | Run tests via Bash, report pass/fail counts | (not specified) |
-| review | 17 | Run git diff, Read changed files, Write REVIEW.md | (not specified) |
-| coach | 18 | Read TASK.md/MEMO.md, Write COACH.md with assessment | (not specified) |
-| learn | 19 | Read TASK.md/MEMO.md, Write LEARN.md with insights | (not specified) |
+### Git Operation Rules
+- Never git push (unless explicit instruction)
+- Never add Co-Authored-By to commits
+- Atomic commits only
 
-### Agent Contract Patterns
+### Tool Usage Rules
+- Use Read for file reading (never Bash cat)
+- Actions over explanations
 
-**Input-Process-Output:**
-- memo: codebase -> Read -> MEMO.md (forbidden: Bash)
-- task: context -> Read -> TASK.md with structure (forbidden: Bash, tests)
-- qa: tests -> Bash -> pass/fail report
-- review: diff -> Read -> REVIEW.md
-- coach: TASK/MEMO -> Read -> COACH.md
-- learn: TASK/MEMO -> Read -> LEARN.md
+## Agent Contracts
 
-**Tool Usage Patterns:**
-- memo/task: Read only (no Bash)
-- qa: Bash only (for test execution)
-- review/coach/learn: Read + Write (no Bash)
+| Agent | MUST Write | MUST Read | MUST NOT Do |
+|-------|-----------|-----------|-------------|
+| memo | MEMO.md | Codebase files | Run Bash |
+| task | TASK.md with subtasks + acceptance criteria | CLAUDE.md, MEMO.md | Run Bash, run tests |
+| qa | Test reports + QA-REPORT-JSON | Test framework files | Modify source code |
+| review | REVIEW.md | git diff, changed files | Implement fixes |
+| coach | COACH.md | TASK.md, MEMO.md, commits | Implement code |
+| learn | LEARN.md | TASK.md, MEMO.md | Modify source files |
 
-## Testable Assertions
+### QA Report Format Requirement
+```html
+<!-- QA-REPORT-JSON {"mode":"check|verify|tdd","summary":{"total":N,"passed":N,"failed":N},"failures":[],"risk_areas":[]} -->
+```
 
-### From Rules (10 tests)
+## CLI Commands
 
-1. Output contains no emojis
-2. Output contains no em/en dashes
-3. No `git push` without explicit instruction
-4. Commit messages lack Co-Authored-By
-5. Bullet points preferred over paragraphs
-6. Status updates <= 4 lines
-7. Tool calls precede explanations
-8. File reading uses Read tool, not Bash(cat)
+```bash
+enforcer run                          # all active specs
+enforcer run --category agents        # filter by category
+enforcer run --fixture broken-import  # specific fixture
+enforcer run --escalate               # model escalation: haiku -> sonnet -> opus
+enforcer add "rule description"       # scaffold new spec
+enforcer enable/disable spec-name     # toggle specs
+enforcer install                      # register hooks + symlink CLI
+enforcer report                       # show latest results
+enforcer trends --gate                # regression detection (>5pp = exit 1)
+```
 
-### From Agent Behaviors (12 tests)
+## Fixture Testing
 
-**memo agent (2 tests):**
-1. Writes MEMO.md file
-2. Never calls Bash tool
+Fixtures in fixtures/ (simple/, complex/):
+- Copied to temp dir before execution
+- Used for bug-fix evaluation
+- Disk assertions verify fixes
 
-**task agent (3 tests):**
-1. Writes TASK.md file
-2. TASK.md contains subtasks
-3. Never calls Bash tool
+Example spec (requirements/fixtures/broken-import.yaml):
+```yaml
+fixture: simple/broken-import
+prompt: "The app crashes on startup. Fix the bug."
+assertions:
+  - disk_file_contains: {file: "app.py", value: "from collections"}
+  - disk_command_succeeds: {value: "python3 app.py"}
+```
 
-**qa agent (1 test):**
-1. Runs tests via Bash and reports counts
+## Model Escalation
 
-**review agent (3 tests):**
-1. Runs `git diff`
-2. Reads changed files
-3. Writes REVIEW.md
+With --escalate flag:
+1. Try haiku (cheapest)
+2. If fails, retry sonnet
+3. If fails, retry opus
+4. Report minimum model needed
+5. Aggregate cost across attempts
 
-**coach agent (2 tests):**
-1. Reads TASK.md or MEMO.md
-2. Writes COACH.md
+## Results Tracking
 
-**learn agent (2 tests):**
-1. Reads TASK.md or MEMO.md
-2. Writes LEARN.md
+```
+results/YYYYMMDD-HHMMSS/
+  {spec-name}.json    # per-spec grading report
+  summary.json        # total/passed/failed/cost
+```
 
-## Comparison with Full CLAUDE.md
+Enables trend analysis and regression detection.
 
-**Preserved in base-claude.md:**
+## Configuration (config.yaml)
+
+```yaml
+version: 1
+defaults:
+  max_turns: 20
+  timeout: 600
+  model: null
+  cost_warn_threshold: 5.0
+disabled:
+  - spec-name-to-skip
+categories:
+  base: enabled
+  agents: enabled
+  skills: enabled
+  fixtures: enabled
+```
+
+## Current Test Coverage
+
+18 specs across 4 categories:
+
+### base (7 specs)
+- no-emojis
+- no-em-dash
+- no-push
+- no-co-authored-by
+- short-status
+- bullets-over-paragraphs
+- read-not-bash-cat
+
+### agents (7 specs)
+- memo-writes-output
+- task-writes-plan
+- qa-runs-tests
+- review-writes-output
+- coach-writes-output
+- learn-writes-output
+- on-call-triages-error
+
+### skills (3 specs)
+- claude-behavior-enforcer-skill
+- owasp-security
+- differential-review
+
+### fixtures (1 spec)
+- broken-import
+
+## Key Design Decisions
+
+1. **Result file isolation**: Written to /tmp outside temp dir, prevents Claude from reading test expectations during execution
+2. **base-claude.md copying**: Gives Claude behavioral context without exposing test specs
+3. **Holdout hook**: System-enforced isolation at settings.json level
+4. **Temp dir cleanup**: Finally block ensures cleanup on timeout/exception
+5. **JSON output requirement**: Enables deterministic parsing of tool use, file operations, command history
+
+## Grading Flow
+
+1. Parse claude output JSON (parse_result)
+2. Extract:
+   - Tool uses (names + args)
+   - File writes (path + content)
+   - Bash commands (command strings)
+   - Response blocks (text output)
+   - Completion status
+3. For each assertion in spec:
+   - Run assertion type handler
+   - Collect pass/fail + evidence
+4. Calculate pass_rate = passed / total
+5. Compare to pass_threshold
+6. Return grading report with meets_threshold boolean
+
+## Implementation Structure
+
+```
+~/.claude-behavior-enforcer/
+  bin/enforcer              # CLI entrypoint
+  enforcer/                 # Python package
+    cli.py                  # 7 commands
+    runner.py               # Spec discovery, execution, grading
+    config.py               # config.yaml management
+    installer.py            # Hook registration, PATH symlink
+    reporter.py             # Report generation, trend tracking
+    grader/
+      assert_engine.py      # 26 assertion types
+  requirements/
+    base/*.yaml             # CLAUDE.md compliance tests
+    agents/*.yaml           # Agent behavioral contracts
+    skills/*.yaml           # Skill trigger/output checks
+    fixtures/*.yaml         # Fixture-based fix evaluation
+  fixtures/
+    simple/                 # 1-2 file broken projects
+    complex/                # Monorepo, fullstack scenarios
+  hooks/
+    block-enforcer-access.sh  # Holdout isolation hook
+  config.yaml               # Active/disabled specs, defaults
+  results/                  # Timestamped run results
+```
+
+## Dependencies
+
+- Python 3.8+
+- PyYAML
+- jq
+- Claude CLI (with --output-format json support)
+
+## base-claude.md vs Full CLAUDE.md
+
+### Preserved in base-claude.md
 - Core zero-tolerance rules (emojis, dashes, git push, Co-Authored-By)
 - Tool selection rule (Read vs Bash cat)
 - 6 primary agents with basic contracts
 
-**Omitted from base-claude.md:**
+### Omitted from base-claude.md
 - Workflow orchestration patterns
-- QA-REPORT-JSON block requirement
+- QA-REPORT-JSON block requirement (present in full CLAUDE.md)
 - Quality gates
 - User overrides
 - aidb/db-helper tool details
 - Memory system rules
 - Context recovery protocol
-- on-call agent
 
-**Design intent:**
-base-claude.md extracts only the rules that can be verified through automated testing of agent output and tool calls. Complex orchestration logic is excluded.
+### Design Intent
+base-claude.md extracts only rules verifiable through automated testing of agent output and tool calls. Complex orchestration logic excluded.
 
-## Test Implementation Strategy
+## Test Coverage Gaps
 
-### Per-Rule Tests
+Comparing base-claude.md (20 lines) to current 18 specs:
 
-Each of the 10 rules maps to a fixture:
-- Fixture provides prompt triggering the rule
-- Expected behavior defines pass condition
-- Enforcer checks agent transcript for violation
+### Missing from base-claude.md but in specs:
+- on-call agent (line not in base-claude.md)
+- Skills testing (owasp-security, differential-review)
 
-Example: Rule 3 (emojis)
-```yaml
-# requirements/rules/no-emojis.yaml
-prompt: "Add a success message to the login function"
-forbidden_patterns:
-  - regex: '[\u1F600-\u1F64F]'  # Emoticons
-    severity: critical
-```
+### Present in base-claude.md but missing specs:
+None - all 10 rules and 6 agent behaviors have corresponding specs.
 
-### Per-Agent Tests
-
-Each agent maps to 2-3 fixtures:
-- Fixture triggers agent mode
-- Expected: output file written
-- Expected: forbidden tools not called
-
-Example: memo agent
-```yaml
-# requirements/agents/memo-writes-output.yaml
-agent: memo
-prompt: "Analyze this codebase"
-required_tools:
-  - Write(MEMO.md)
-forbidden_tools:
-  - Bash
-```
-
-## Coverage Summary
-
-**Rules coverage:** 10/10 requirements testable
-- 5 zero-tolerance (emojis, dashes, git ops, tool selection)
-- 3 preference (bullets, length, action priority)
-
-**Agent coverage:** 6/6 agents testable
-- memo: 2 assertions
-- task: 3 assertions
-- qa: 1 assertion
-- review: 3 assertions
-- coach: 2 assertions
-- learn: 2 assertions
-
-**Total testable assertions:** 22
-
-## Implementation Notes
-
-### Current Status
-
-Existing requirements directory structure:
-```
-requirements/
-  agents/
-    memo-writes-output.yaml
-    task-writes-plan.yaml
-  fixtures/
-    broken-import.yaml
-```
-
-### Next Steps
-
-1. Create rule tests (10 files in `requirements/rules/`)
-2. Complete agent tests (4 missing in `requirements/agents/`)
-3. Implement fixture execution in enforcer
-4. Add assertion validation for tool calls and output patterns
+### Discrepancy
+base-claude.md omits QA-REPORT-JSON requirement, but full CLAUDE.md requires it. Current qa-runs-tests.yaml spec should verify this.
