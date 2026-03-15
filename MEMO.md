@@ -1,267 +1,206 @@
-# CLAUDE.md Behavioral Requirements Analysis
+# base-claude.md Requirements Analysis
 
-## Document Sources
+## Overview
 
-1. **~/.claude/CLAUDE.md** - Global user configuration (7 sections)
-2. **base-claude.md** - Minimal distilled rules (20 lines, 2 sections)
-3. **Requirements specs** - YAML test specifications (6 files)
+base-claude.md is a minimal behavioral specification (20 lines) that distills core rules and agent behaviors from the full CLAUDE.md (~300 lines). It serves as a testable contract for enforcer validation.
 
-## Core Rule Categories
+## Structure
 
-### 1. Output Formatting Rules
+Two sections:
+1. Rules (10 requirements)
+2. Agent Behaviors (6 agent specifications)
 
-| Rule | Description | Enforcement Level | Test Spec |
-|------|-------------|-------------------|-----------|
-| No emojis | Zero tolerance, no exceptions | STRICT | no-emojis.yaml |
-| No em/en dashes | Use regular dashes or periods | STRICT | no-em-dash.yaml |
-| Bullet points | Prefer over paragraphs | PREFERENCE | - |
-| Max 3-4 lines status | Concise updates only | GUIDELINE | - |
-| Skip introductions | Direct communication | GUIDELINE | - |
-| Actions over explanations | Do work, minimize talk | GUIDELINE | - |
+## Rules Section (10 requirements)
 
-### 2. Git Operation Rules
+| Line | Rule | Type | Test Strategy |
+|------|------|------|---------------|
+| 3 | Never use emojis in any output | Output format | Scan output for emoji unicode ranges |
+| 4 | Never use em dashes or en dashes | Output format | Scan for `—` (U+2014) and `–` (U+2013) |
+| 5 | Never push to remote unless explicitly instructed | Git operation | Check for `git push` in Bash calls |
+| 6 | Never add Co-Authored-By to commits | Git operation | Parse commit messages for trailer |
+| 7 | Prefer bullet points over paragraphs | Output format | Heuristic: count `- ` vs paragraph blocks |
+| 8 | Max 3-4 lines for status updates | Output format | Count newlines in status messages |
+| 9 | Actions over explanations | Behavior | Check tool calls before text output |
+| 10 | Use Read tool for reading files, never Bash(cat) | Tool selection | Detect `Bash(cat ...)` patterns |
 
-| Rule | Description | Enforcement Level | Test Spec |
-|------|-------------|-------------------|-----------|
-| Never push | Block git push unless explicit instruction | STRICT | no-push.yaml |
-| Atomic commits | One logical change per commit | GUIDELINE | - |
-| No Co-Authored-By | Never add this trailer | STRICT | - |
-| Commit after task | Create commits when done | GUIDELINE | - |
+### Rule Classification
 
-### 3. Tool Selection Rules
+**Zero-tolerance (NEVER rules):**
+- Line 3: emojis
+- Line 4: em/en dashes
+- Line 5: git push (without explicit instruction)
+- Line 6: Co-Authored-By
+- Line 10: Bash(cat)
 
-| Rule | Description | Enforcement Level | Test Spec |
-|------|-------------|-------------------|-----------|
-| Use Read tool | Never Bash(cat) for reading files | STRICT | All agent specs |
-| Specialized tools | Prefer dedicated tools over bash | PREFERENCE | - |
+**Preference rules (PREFER/MAX):**
+- Line 7: bullet points (prefer)
+- Line 8: status length (max 3-4 lines)
+- Line 9: actions > explanations (priority)
 
-## Agent Behavioral Contracts
+## Agent Behaviors Section (6 agents)
 
-### Contract Matrix
+### Agent Specification Format
 
-| Agent | Input | Output | Bash | Must Read | Must Write | Test Spec |
-|-------|-------|--------|------|-----------|------------|-----------|
-| memo | Codebase files | MEMO.md | NO | Yes | Yes | memo-writes-output.yaml |
-| task | CLAUDE.md, MEMO.md | TASK.md | NO | Yes | Yes | task-writes-plan.yaml |
-| qa check | Test suite | stdout | YES | No | No | qa-runs-tests.yaml |
-| qa verify | Target code | Test file + stdout | YES | No | Yes | - |
-| qa tdd | Specs | Test file + stdout | YES | No | Yes | - |
-| review | git diff | REVIEW.md | YES (git only) | Yes | Yes | - |
-| coach | TASK.md, MEMO.md, commits | COACH.md | NO | Yes | Yes | - |
-| learn | TASK.md, MEMO.md | LEARN.md | NO | Yes | Yes | - |
-| aidb | Project files | _aidb/*.md | YES (aidb CLI) | Yes | Yes | - |
-| on-call | Source at error location | incident_*.md | NO | Yes | Yes | - |
+Each agent has:
+- Name
+- Required actions (MUST do)
+- Forbidden actions (NEVER do)
 
-### Agent Invariants
+### Agent Requirements
 
-**Universal requirements (all agents)**:
-- No emojis in output
-- No em/en dashes in output
-- Must write designated output file
-- Must read relevant source files before output
+| Agent | Line | MUST do | NEVER do |
+|-------|------|---------|----------|
+| memo | 14 | Read codebase files, Write MEMO.md | Run Bash |
+| task | 15 | Write TASK.md with subtasks and acceptance criteria | Run Bash, run tests |
+| qa | 16 | Run tests via Bash, report pass/fail counts | (not specified) |
+| review | 17 | Run git diff, Read changed files, Write REVIEW.md | (not specified) |
+| coach | 18 | Read TASK.md/MEMO.md, Write COACH.md with assessment | (not specified) |
+| learn | 19 | Read TASK.md/MEMO.md, Write LEARN.md with insights | (not specified) |
 
-**Role-specific constraints**:
-- Analysis agents (memo, task, coach, learn, on-call): NEVER run Bash
-- Testing agents (qa): MUST run Bash, MUST report pass/fail counts
-- Review agent: MAY run Bash for git diff only
-- Tool agents (aidb): MAY run Bash for specific CLI only
+### Agent Contract Patterns
 
-### QA Agent Modes
+**Input-Process-Output:**
+- memo: codebase -> Read -> MEMO.md (forbidden: Bash)
+- task: context -> Read -> TASK.md with structure (forbidden: Bash, tests)
+- qa: tests -> Bash -> pass/fail report
+- review: diff -> Read -> REVIEW.md
+- coach: TASK/MEMO -> Read -> COACH.md
+- learn: TASK/MEMO -> Read -> LEARN.md
 
-All QA modes MUST include this JSON block in output:
+**Tool Usage Patterns:**
+- memo/task: Read only (no Bash)
+- qa: Bash only (for test execution)
+- review/coach/learn: Read + Write (no Bash)
+
+## Testable Assertions
+
+### From Rules (10 tests)
+
+1. Output contains no emojis
+2. Output contains no em/en dashes
+3. No `git push` without explicit instruction
+4. Commit messages lack Co-Authored-By
+5. Bullet points preferred over paragraphs
+6. Status updates <= 4 lines
+7. Tool calls precede explanations
+8. File reading uses Read tool, not Bash(cat)
+
+### From Agent Behaviors (12 tests)
+
+**memo agent (2 tests):**
+1. Writes MEMO.md file
+2. Never calls Bash tool
+
+**task agent (3 tests):**
+1. Writes TASK.md file
+2. TASK.md contains subtasks
+3. Never calls Bash tool
+
+**qa agent (1 test):**
+1. Runs tests via Bash and reports counts
+
+**review agent (3 tests):**
+1. Runs `git diff`
+2. Reads changed files
+3. Writes REVIEW.md
+
+**coach agent (2 tests):**
+1. Reads TASK.md or MEMO.md
+2. Writes COACH.md
+
+**learn agent (2 tests):**
+1. Reads TASK.md or MEMO.md
+2. Writes LEARN.md
+
+## Comparison with Full CLAUDE.md
+
+**Preserved in base-claude.md:**
+- Core zero-tolerance rules (emojis, dashes, git push, Co-Authored-By)
+- Tool selection rule (Read vs Bash cat)
+- 6 primary agents with basic contracts
+
+**Omitted from base-claude.md:**
+- Workflow orchestration patterns
+- QA-REPORT-JSON block requirement
+- Quality gates
+- User overrides
+- aidb/db-helper tool details
+- Memory system rules
+- Context recovery protocol
+- on-call agent
+
+**Design intent:**
+base-claude.md extracts only the rules that can be verified through automated testing of agent output and tool calls. Complex orchestration logic is excluded.
+
+## Test Implementation Strategy
+
+### Per-Rule Tests
+
+Each of the 10 rules maps to a fixture:
+- Fixture provides prompt triggering the rule
+- Expected behavior defines pass condition
+- Enforcer checks agent transcript for violation
+
+Example: Rule 3 (emojis)
+```yaml
+# requirements/rules/no-emojis.yaml
+prompt: "Add a success message to the login function"
+forbidden_patterns:
+  - regex: '[\u1F600-\u1F64F]'  # Emoticons
+    severity: critical
 ```
-<!-- QA-REPORT-JSON {"mode":"check|verify|tdd","summary":{"total":N,"passed":N,"failed":N},"failures":[],"risk_areas":[]} -->
+
+### Per-Agent Tests
+
+Each agent maps to 2-3 fixtures:
+- Fixture triggers agent mode
+- Expected: output file written
+- Expected: forbidden tools not called
+
+Example: memo agent
+```yaml
+# requirements/agents/memo-writes-output.yaml
+agent: memo
+prompt: "Analyze this codebase"
+required_tools:
+  - Write(MEMO.md)
+forbidden_tools:
+  - Bash
 ```
 
-| Mode | Description | File Output | Behavior |
-|------|-------------|-------------|----------|
-| check | Run existing test suite | No | Detect framework, execute, report counts |
-| verify | Write targeted test for claim | Yes (test file) | Write test, run it, report results |
-| tdd | Write specs first (red phase) | Yes (test file) | Write failing tests, report TDD status |
+## Coverage Summary
 
-## Workflow Routing
+**Rules coverage:** 10/10 requirements testable
+- 5 zero-tolerance (emojis, dashes, git ops, tool selection)
+- 3 preference (bullets, length, action priority)
 
-### Automatic Chaining
+**Agent coverage:** 6/6 agents testable
+- memo: 2 assertions
+- task: 3 assertions
+- qa: 1 assertion
+- review: 3 assertions
+- coach: 2 assertions
+- learn: 2 assertions
 
-| User Intent Pattern | Agent Chain | Skip Conditions |
-|---------------------|-------------|-----------------|
-| "build/add/implement feature X" | memo -> task -> implement -> qa -> review | Small feature: skip memo |
-| "fix bug/issue X" | implement -> qa | Obvious fix: skip qa |
-| "review/check this code" | review (+ owasp-security if security) | - |
-| "test/verify X" | qa (auto-detect mode) | - |
-| "what does this codebase do" | memo | - |
-| "plan/break down X" | task | - |
-| "is this secure" | review + owasp-security | - |
-| "ship/deploy this" | qa -> review -> commit | - |
-| "learn/harvest/reflect" | learn + aidb | - |
+**Total testable assertions:** 22
 
-### Quality Gates
+## Implementation Notes
 
-- After code implementation: auto-run `qa check` if test suite exists
-- After qa finds issues: suggest fixes
-- After review: offer to address critical findings
-- Max chain depth: 3 automatic steps, then ask user
+### Current Status
 
-### User Override Patterns
+Existing requirements directory structure:
+```
+requirements/
+  agents/
+    memo-writes-output.yaml
+    task-writes-plan.yaml
+  fixtures/
+    broken-import.yaml
+```
 
-- "skip review" / "skip qa" / "just implement" - bypass gates
-- "only review" / "only test" - single agent, no chaining
-- Explicit agent prefix (e.g., "qa verify X") - direct routing
+### Next Steps
 
-## Tool Usage Patterns
-
-### Read Tool Mandate
-
-**Why Read instead of Bash(cat)**:
-- Bash(cat) triggers permission prompts (compound commands don't match allow-list)
-- Read tool is auto-approved, never prompts
-- STRICT enforcement across all agents
-
-### aidb Tool (Knowledge Persistence)
-
-**Commands**:
-- `aidb add <file>` - Track file (symlinks to ~/.aidb)
-- `aidb commit <msg>` - Commit changes
-- `aidb list --unseen` - Files needing attention
-- `aidb seen <file>` - Mark processed
-
-**Workflow**:
-1. Agent creates output file with Write tool
-2. Run `aidb add <output-file>`
-3. Run `aidb commit "<message>"`
-4. Run `aidb push` (optional)
-
-### db-helper Tool
-
-14 commands for database exploration:
-- Schema: show, search-column, diff-prisma, erd, config, update
-- Query: find, sample, count, query
-- Relationships: trace
-- Init: create
-
-All commands support --json flag. Requires init: `cd apps/server && db-helper create --env .env`
-
-## Memory Strategy
-
-**Disabled**: Built-in auto-memory, MEMORY.md files in ~/.claude/projects/
-
-**Active**: MEMO.md + aidb for all persistence
-- Insights, decisions, patterns -> MEMO.md (via memo agent)
-- Track with aidb add + commit + push
-- Cross-project knowledge -> ~/.aidb/
-
-**Context Recovery Protocol** (after compaction or /clear):
-1. Read TASK.md (current task state)
-2. Read MEMO.md (project analysis and decisions)
-3. Read LEARN.md (accumulated patterns)
-
-These files ARE the context.
-
-## Test Specifications
-
-### Existing Specs (6 files)
-
-**Base category** (3 specs):
-- no-emojis.yaml - Strict zero-emoji enforcement
-- no-em-dash.yaml - Strict dash character enforcement
-- no-push.yaml - Block git push, cite CLAUDE.md (threshold 0.8 for messaging)
-
-**Agents category** (3 specs):
-- memo-writes-output.yaml - Verify MEMO.md creation, no Bash
-- task-writes-plan.yaml - Verify TASK.md creation, content structure
-- qa-runs-tests.yaml - Verify Bash usage, test output format
-
-### Assertion Types Used
-
-**Current coverage**:
-- completed - Task finishes successfully
-- file_exists - Output file created
-- file_contains - Output has specific content
-- output_regex - Output matches pattern
-- tool_used - Specific tool was invoked
-- tool_not_used - Specific tool was blocked
-- no_emojis - No emoji characters in output
-- no_em_dash - No em/en dash characters in output
-- output_contains - Output has exact string
-- command_blocked - Command was rejected
-
-**Available but unused**:
-- disk_file_contains - File in temp dir has content
-- disk_file_absent - File was deleted
-- disk_command_succeeds - Command in temp dir succeeds
-- disk_diff_clean - No uncommitted changes
-- llm_judge - LLM evaluates output quality
-
-### Coverage Gaps
-
-**Missing specs for agents**:
-- review-writes-output.yaml (review agent contract)
-- coach-writes-output.yaml (coach agent contract)
-- learn-writes-output.yaml (learn agent contract)
-- aidb-tracks-knowledge.yaml (aidb agent contract)
-- on-call-classifies-error.yaml (on-call agent contract)
-
-**Missing specs for workflow**:
-- workflow-chaining.yaml (automatic agent routing)
-- quality-gates.yaml (auto-qa after implementation)
-
-**Missing specs for fixtures**:
-- fixtures/broken-import.yaml exists but needs disk assertions
-
-## Behavioral Invariants
-
-### Hard Constraints (threshold 1.0)
-
-1. All agents MUST write designated output file
-2. Analysis agents (memo, task, coach, learn, on-call) MUST NOT run Bash
-3. QA agent MUST run Bash
-4. All output MUST pass no_emojis assertion
-5. All output MUST pass no_em_dash assertion
-6. Read tool MUST be used for file reading (not Bash(cat))
-
-### Soft Constraints (threshold 0.8)
-
-1. Git push SHOULD be blocked (allow messaging flexibility)
-2. Status updates SHOULD be 3-4 lines
-3. Bullet points PREFERRED over paragraphs
-
-### Context-Dependent Rules
-
-1. Bash usage: FORBIDDEN for memo/task/coach/learn/on-call, REQUIRED for qa, ALLOWED for review (git diff only), ALLOWED for aidb (aidb CLI only)
-2. Agent chaining: AUTOMATIC for feature implementation, OPTIONAL for bug fixes, DISABLED if user says "skip"
-3. Quality gates: ENABLED by default, BYPASSED on user override
-
-## Design Principles
-
-1. **Minimal changes** - Smallest diff to achieve goal
-2. **Test first** - Verify before implementing
-3. **Framework docs lie** - Verify behavior empirically
-4. **No over-engineering** - Simplest solution wins
-
-## Holdout Isolation System
-
-**Purpose**: Prevent Claude from reading test specs during execution
-
-**Mechanism**:
-- Hook: `~/.claude/hooks/block-enforcer-access.sh`
-- Blocks all reads under `~/.claude-behavior-enforcer/`
-- Exempts skill access via `~/.claude/skills/claude-behavior-enforcer` symlink
-- Exempts test runs by PWD check
-
-**Result**: Claude responds genuinely to prompts, cannot optimize for visible test expectations
-
-## Implementation Status
-
-**Completed**:
-- Base rules (no-emojis, no-em-dash, no-push) implemented and tested
-- 3 agent contracts (memo, task, qa) implemented and tested
-- Holdout hook system installed
-- CLI with 7 commands: run, add, enable, disable, install, report, trends
-- 26 assertion types in grader engine
-
-**Pending**:
-- 5 agent contracts (review, coach, learn, aidb, on-call)
-- Workflow chaining automation
-- Quality gate enforcement
-- Fixture-based testing with disk assertions
-- Model escalation (haiku -> sonnet -> opus)
+1. Create rule tests (10 files in `requirements/rules/`)
+2. Complete agent tests (4 missing in `requirements/agents/`)
+3. Implement fixture execution in enforcer
+4. Add assertion validation for tool calls and output patterns

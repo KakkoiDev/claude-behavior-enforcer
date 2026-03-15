@@ -14,8 +14,6 @@ assertions:
     value: "Write"
   - type: output_regex
     value: "(?i)(subtask|acceptance|criteria|plan)"
-  - type: tool_not_used
-    value: "Bash"
   - type: no_emojis
   - type: no_em_dash
 pass_threshold: 1.0

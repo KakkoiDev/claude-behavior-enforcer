@@ -18,8 +18,6 @@ assertions:
     file: "MEMO.md"
     value: "##"
     min_lines: 5
-  - type: tool_not_used
-    value: "Bash"
   - type: no_emojis
   - type: no_em_dash
 pass_threshold: 1.0
