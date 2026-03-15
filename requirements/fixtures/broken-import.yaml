@@ -3,7 +3,8 @@ description: "Fixture: app.py has a typo in import (colections instead of collec
 category: fixtures
 tags: [fixture, python, simple]
 fixture: simple/broken-import
-prompt: "app.py has a typo in an import statement. Read app.py, edit it to fix the typo, then run python3 app.py to verify the fix works."
+prompt: "Fix app.py. It has a misspelled import. Use the Edit tool to correct it, then run python3 app.py to confirm the fix."
+setup: "git init && git add -A && git commit -m init"
 config:
   max_turns: 15
   timeout: 300

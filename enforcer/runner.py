@@ -119,8 +119,8 @@ def run_spec(spec, model=None):
         if model:
             claude_args += ["--model", model]
 
-        # Execute
-        result_file = os.path.join(temp_dir, "_enforcer_result.json")
+        # Execute - result file outside temp dir so Claude doesn't see it
+        result_file = f"/tmp/enforcer-result-{os.getpid()}-{id(spec)}.json"
         try:
             with open(result_file, "w") as out:
                 subprocess.run(
@@ -132,6 +132,10 @@ def run_spec(spec, model=None):
 
         # Parse and grade
         result = parse_result(result_file)
+        try:
+            os.unlink(result_file)
+        except OSError:
+            pass
 
         # Run teardown
         if teardown_cmd:
