@@ -16,7 +16,9 @@ assertions:
   - type: output_regex
     value: "(?i)(undefined|null|missing|auth|userId)"
   - type: output_regex
-    value: "(?i)(fix|root cause|classification|bug|check|validate|guard)"
+    value: "(?i)(root cause|classification|bug|severity|critical|high|medium)"
+  - type: output_regex
+    value: "(?i)(incident|triage|error|stack.?trace|middleware)"
   - type: no_emojis
   - type: no_em_dash
 pass_threshold: 1.0

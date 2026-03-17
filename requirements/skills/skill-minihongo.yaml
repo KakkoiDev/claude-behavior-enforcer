@@ -1,0 +1,17 @@
+name: skill-minihongo
+description: Claude should know minihongo project and 181-word vocabulary constraint
+category: skills
+tags: [skill, minihongo, japanese]
+prompt: "How does the minihongo project work? What constraints does the vocabulary have?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(181|vocabular|word|japanese|minihongo)"
+  - type: output_regex
+    value: "(?i)(build|site|content|haiku|lesson|compound)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

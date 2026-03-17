@@ -1,0 +1,17 @@
+name: skill-project-kickstart-trd
+description: Claude should know TRD generation workflow from brief and checklist
+category: skills
+tags: [skill, project-kickstart, trd]
+prompt: "How do I generate a TRD using /project-kickstart-trd? What inputs does it need?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(TRD|technical.?requirement|document)"
+  - type: output_regex
+    value: "(?i)(brief|checklist|template|task|acceptance.?criteria|section)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

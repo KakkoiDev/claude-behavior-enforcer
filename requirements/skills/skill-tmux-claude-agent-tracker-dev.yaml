@@ -1,0 +1,17 @@
+name: skill-tmux-claude-agent-tracker-dev
+description: Claude should know tracker development conventions and debugging
+category: skills
+tags: [skill, tmux, tracker, dev]
+prompt: "How do I debug the tmux-claude-agent-tracker? What test framework does it use?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(bats|test|debug|log|tracker)"
+  - type: output_regex
+    value: "(?i)(bash|sqlite|tmux|script|unit|integration)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

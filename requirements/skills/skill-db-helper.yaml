@@ -1,0 +1,17 @@
+name: skill-db-helper
+description: Claude should know db-helper commands for database exploration
+category: skills
+tags: [skill, db-helper, database]
+prompt: "How do I explore the database schema and find records using db-helper?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(db-helper\\s+(show|find|sample|query|trace|count|search-column)|schema|table)"
+  - type: output_regex
+    value: "(?i)(--json|--where|--table|database|query)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

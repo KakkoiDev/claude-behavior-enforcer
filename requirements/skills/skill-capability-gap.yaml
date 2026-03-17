@@ -1,0 +1,15 @@
+name: skill-capability-gap
+description: Capability gap detection should identify unfamiliar tech and suggest tools
+category: skills
+tags: [skill, capability-gap]
+prompt: "I just opened a new Rust project but I've never worked with Rust before. What tools do I need?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(rust|cargo|tool|install|setup|analyzer|MCP|plugin)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

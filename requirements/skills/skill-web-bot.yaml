@@ -1,0 +1,17 @@
+name: skill-web-bot
+description: Claude should know web-bot browser automation workflow
+category: skills
+tags: [skill, web-bot, browser]
+prompt: "How do I use /web-bot to screenshot a page and extract content?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(web.?bot|puppeteer|browser|screenshot|lightpanda)"
+  - type: output_regex
+    value: "(?i)(navigate|page|script|\\.web-bot|url)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

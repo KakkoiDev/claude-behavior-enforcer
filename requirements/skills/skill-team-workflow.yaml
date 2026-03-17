@@ -1,0 +1,17 @@
+name: skill-team-workflow
+description: Claude should know team-workflow phases for agent orchestration
+category: skills
+tags: [skill, team-workflow, multi-agent]
+prompt: "How does /team-workflow orchestrate agents for analysis and validation?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(team|phase|analyz|validat|workflow)"
+  - type: output_regex
+    value: "(?i)(memo|qa|review|aidb|agent|parallel)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

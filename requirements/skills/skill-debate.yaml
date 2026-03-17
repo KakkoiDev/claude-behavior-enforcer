@@ -1,0 +1,17 @@
+name: skill-debate
+description: Claude should know the debate skill workflow for adversarial investigation
+category: skills
+tags: [skill, debate, multi-agent]
+prompt: "How does the /debate skill work? I want to investigate why our API is slow."
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(hypothesis|hypotheses|investigat|adversarial|debate)"
+  - type: output_regex
+    value: "(?i)(agent|parallel|team|evidence|finding|synthesis)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

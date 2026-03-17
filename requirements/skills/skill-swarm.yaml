@@ -1,0 +1,17 @@
+name: skill-swarm
+description: Claude should know the swarm pattern for parallel implementation
+category: skills
+tags: [skill, swarm, multi-agent]
+prompt: "How does the /swarm skill work for parallel implementation?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(planner|worker|judge|orchestrat|swarm)"
+  - type: output_regex
+    value: "(?i)(parallel|haiku|task|file|dispatch)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

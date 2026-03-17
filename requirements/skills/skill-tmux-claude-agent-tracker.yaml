@@ -1,0 +1,17 @@
+name: skill-tmux-claude-agent-tracker
+description: Claude should know tmux tracker commands and hook configuration
+category: skills
+tags: [skill, tmux, tracker]
+prompt: "How does the tmux-claude-agent-tracker work? How do I set it up?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(tmux|tracker|status.?bar|hook|session)"
+  - type: output_regex
+    value: "(?i)(install|init|config|pane|agent|sqlite)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

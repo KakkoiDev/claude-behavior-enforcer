@@ -1,0 +1,17 @@
+name: web-bot-generates-scripts
+description: web-bot agent must generate browser automation scripts
+category: agents
+tags: [web-bot, browser, scripts]
+prompt: "Act as the web-bot agent. Write a Puppeteer script to navigate to http://example.com and take a screenshot. Save it to .web-bot/screenshot.mjs"
+config:
+  max_turns: 10
+  timeout: 300
+assertions:
+  - type: completed
+  - type: tool_used
+    value: "Write"
+  - type: output_regex
+    value: "(?i)(puppeteer|script|screenshot|browser)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

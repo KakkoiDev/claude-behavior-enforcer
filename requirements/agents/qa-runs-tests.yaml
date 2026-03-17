@@ -12,6 +12,8 @@ assertions:
     value: "Bash"
   - type: output_regex
     value: "(?i)(test|pass|fail|error|suite|result|running)"
+  - type: output_regex
+    value: "QA-REPORT-JSON"
   - type: no_emojis
   - type: no_em_dash
 pass_threshold: 1.0

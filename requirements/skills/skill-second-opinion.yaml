@@ -1,0 +1,17 @@
+name: skill-second-opinion
+description: Claude should know how to run external LLM code reviews
+category: skills
+tags: [skill, second-opinion, review]
+prompt: "How do I get a second opinion on my code changes using an external LLM?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(codex|gemini|external|second.?opinion|LLM)"
+  - type: output_regex
+    value: "(?i)(review|diff|change|branch|commit)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

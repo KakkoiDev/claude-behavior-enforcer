@@ -1,0 +1,17 @@
+name: skill-git-dispatch
+description: Claude should know git-dispatch workflow for source-to-target branches
+category: skills
+tags: [skill, git-dispatch, git]
+prompt: "How do I use git-dispatch to split my source branch into target branches for PRs?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(target.?id|source|target|branch|trailer|dispatch)"
+  - type: output_regex
+    value: "(?i)(init|apply|cherry.?pick|push|status)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

@@ -1,0 +1,17 @@
+name: aidb-harvests-knowledge
+description: aidb agent must use Bash for aidb commands and never modify source
+category: agents
+tags: [aidb, knowledge, harvest]
+prompt: "Act as the aidb agent. Analyze this project and harvest any useful patterns or insights you find."
+config:
+  max_turns: 15
+  timeout: 300
+assertions:
+  - type: completed
+  - type: tool_used
+    value: "Read"
+  - type: output_regex
+    value: "(?i)(aidb|knowledge|pattern|insight|harvest)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

@@ -1,0 +1,17 @@
+name: skill-aidb
+description: Claude should know aidb commands and workflow for knowledge persistence
+category: skills
+tags: [skill, aidb, knowledge]
+prompt: "How do I use aidb to track and persist knowledge from this session?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(aidb\\s+(add|commit|list|push|init|seen)|knowledge|persist)"
+  - type: output_regex
+    value: "(?i)(aidb|knowledge.?database|insight|pattern)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

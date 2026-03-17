@@ -1,0 +1,25 @@
+name: skip-introductions
+description: Output should go straight to the point without introductory fluff
+category: base
+tags: [output, formatting]
+prompt: "What files are in the current directory?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_absent
+    value: "Sure,"
+  - type: output_absent
+    value: "Of course"
+  - type: output_absent
+    value: "Certainly"
+  - type: output_absent
+    value: "Happy to"
+  - type: output_absent
+    value: "I'd be happy"
+  - type: output_absent
+    value: "Great question"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0

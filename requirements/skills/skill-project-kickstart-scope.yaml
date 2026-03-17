@@ -1,0 +1,17 @@
+name: skill-project-kickstart-scope
+description: Claude should know the scoping session workflow and checklist process
+category: skills
+tags: [skill, project-kickstart, scope]
+prompt: "How do I run a project scoping session using /project-kickstart-scope?"
+config:
+  max_turns: 5
+  timeout: 120
+assertions:
+  - type: completed
+  - type: output_regex
+    value: "(?i)(scop|checklist|question|session|brief)"
+  - type: output_regex
+    value: "(?i)(project|feature|part|sign.?off|template)"
+  - type: no_emojis
+  - type: no_em_dash
+pass_threshold: 1.0
