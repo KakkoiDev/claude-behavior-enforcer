@@ -12,6 +12,7 @@ import yaml
 
 from enforcer import config
 from enforcer.grader.assert_engine import grade, parse_result
+from enforcer import sandbox
 
 ENFORCER_DIR = Path(os.path.expanduser("~/.claude-behavior-enforcer"))
 REQUIREMENTS_DIR = ENFORCER_DIR / "requirements"
@@ -65,10 +66,11 @@ def snapshot_files(directory):
     return files
 
 
-def run_spec(spec, model=None):
+def run_spec(spec, model=None, use_sandbox=True):
     """Execute a single spec. Returns grading report dict."""
     cfg = config.load()
     defaults = cfg.get("defaults", {})
+    sandbox_cfg = cfg.get("sandbox", {})
 
     prompt = spec["prompt"]
     max_turns = spec.get("config", {}).get("max_turns", defaults.get("max_turns", 20))
@@ -77,10 +79,21 @@ def run_spec(spec, model=None):
     setup_cmd = spec.get("setup", "")
     teardown_cmd = spec.get("teardown", "")
     fixture_name = spec.get("fixture")
+    spec_sandbox = spec.get("sandbox", {})
+
+    # Resolve sandbox: enabled globally AND not disabled for this run
+    sandbox_enabled = use_sandbox and sandbox_cfg.get("enabled", True)
+    srt_bin = None
+    if sandbox_enabled:
+        srt_bin = sandbox.resolve_srt_bin(sandbox_cfg.get("srt_bin"))
+        if not srt_bin:
+            print("    WARN: SRT not found, running without sandbox")
+            sandbox_enabled = False
 
     # Create temp dir
     temp_dir = tempfile.mkdtemp(prefix="enforcer-")
     context = {"temp_dir": temp_dir}
+    settings_path = None
 
     try:
         # Copy base CLAUDE.md so Claude sees behavioral rules during testing
@@ -97,7 +110,7 @@ def run_spec(spec, model=None):
         # Snapshot for disk_diff_clean
         context["file_snapshot"] = snapshot_files(temp_dir)
 
-        # Run setup
+        # Run setup (before sandbox — setup runs on host)
         if setup_cmd:
             subprocess.run(
                 setup_cmd, shell=True, cwd=temp_dir,
@@ -119,13 +132,20 @@ def run_spec(spec, model=None):
         if model:
             claude_args += ["--model", model]
 
+        # Wrap in SRT sandbox if enabled
+        if sandbox_enabled:
+            settings_path = sandbox.write_settings(temp_dir, spec_sandbox)
+            run_args = sandbox.wrap_command(claude_args, settings_path, srt_bin)
+        else:
+            run_args = claude_args
+
         # Execute - result file outside temp dir so Claude doesn't see it
         result_file = f"/tmp/enforcer-result-{os.getpid()}-{id(spec)}.json"
         err_file = result_file + ".err"
         try:
             with open(result_file, "w") as out, open(err_file, "w") as err:
                 proc = subprocess.run(
-                    claude_args, stdout=out, stderr=err,
+                    run_args, stdout=out, stderr=err,
                     timeout=timeout
                 )
         except subprocess.TimeoutExpired:
@@ -141,7 +161,7 @@ def run_spec(spec, model=None):
         except OSError:
             pass
 
-        # Run teardown
+        # Run teardown (on host, not in sandbox)
         if teardown_cmd:
             subprocess.run(
                 teardown_cmd, shell=True, cwd=temp_dir,
@@ -152,13 +172,20 @@ def run_spec(spec, model=None):
         report["spec_name"] = spec.get("name", "unknown")
         report["category"] = spec.get("_category", "unknown")
         report["model"] = model
+        report["sandboxed"] = sandbox_enabled
         return report
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
+        if settings_path:
+            try:
+                os.unlink(settings_path)
+            except OSError:
+                pass
 
 
-def run_all(category=None, fixture=None, tag=None, model=None, escalate=False):
+def run_all(category=None, fixture=None, tag=None, model=None, escalate=False,
+            use_sandbox=True):
     """Run all matching specs. Returns (results_list, summary_dict)."""
     specs = discover_specs(category=category, fixture=fixture, tag=tag)
     if not specs:
@@ -172,9 +199,9 @@ def run_all(category=None, fixture=None, tag=None, model=None, escalate=False):
         print(f"  {spec_name} ... ", end="", flush=True)
 
         if escalate:
-            report = _run_with_escalation(spec)
+            report = _run_with_escalation(spec, use_sandbox=use_sandbox)
         else:
-            report = run_spec(spec, model=model)
+            report = run_spec(spec, model=model, use_sandbox=use_sandbox)
 
         status = "PASS" if report.get("meets_threshold") else "FAIL"
         cost = report.get("cost_usd", 0)
@@ -211,14 +238,14 @@ def run_all(category=None, fixture=None, tag=None, model=None, escalate=False):
     return results, summary
 
 
-def _run_with_escalation(spec):
+def _run_with_escalation(spec, use_sandbox=True):
     """Run spec with model escalation: haiku -> sonnet -> opus."""
     models = ["haiku", "sonnet", "opus"]
     attempts = []
     total_cost = 0
 
     for model in models:
-        report = run_spec(spec, model=model)
+        report = run_spec(spec, model=model, use_sandbox=use_sandbox)
         total_cost += report.get("cost_usd", 0)
         attempts.append({
             "model": model,

@@ -22,6 +22,7 @@ def cmd_run(args):
         tag=args.tag,
         model=args.model,
         escalate=args.escalate,
+        use_sandbox=not args.no_sandbox,
     )
 
     total = summary.get("total", 0)
@@ -123,6 +124,7 @@ def main():
     p_run.add_argument("--tag", "-t", help="Filter by tag")
     p_run.add_argument("--model", "-m", help="Model to use (haiku, sonnet, opus)")
     p_run.add_argument("--escalate", action="store_true", help="Auto-escalate: haiku -> sonnet -> opus")
+    p_run.add_argument("--no-sandbox", action="store_true", help="Disable SRT sandbox (unsafe, for debugging)")
     p_run.set_defaults(func=cmd_run)
 
     # add

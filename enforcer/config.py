@@ -18,6 +18,12 @@ def load():
                 "model": None,
                 "cost_warn_threshold": 5.0,
             },
+            "sandbox": {
+                "enabled": True,
+                "srt_bin": None,
+                "deny_home": True,
+                "allow_domains": [],
+            },
             "disabled": [],
             "categories": {
                 "base": "enabled",

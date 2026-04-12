@@ -4,6 +4,12 @@ defaults:
   timeout: 600
   model: null
   cost_warn_threshold: 5.0
+sandbox:
+  enabled: true
+  srt_bin: null  # auto-detect; set path to node .../cli.js or "srt" if on PATH
+  # Default: deny all of $HOME. Per-spec allow_read opens specific paths.
+  deny_home: true
+  allow_domains: []
 disabled: []
 categories:
   base: enabled
